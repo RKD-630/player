@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediaPro | Universal High-Performance Media Player</title>
+    <meta name="description" content="A professional-grade universal media player supporting HLS, MP4, MP3, and many more formats. Browse or stream with advanced controls.">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- HLS.js for m3u8 support -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+</head>
+<body>
+    <div id="app" class="app-container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-play-circle"></i>
+                <span>MediaPro</span>
+            </div>
+            <div class="input-section">
+                <div class="input-group">
+                    <input type="text" id="mediaUrl" placeholder="Paste link (m3u8, mp4, mp3)...">
+                    <button id="loadUrlBtn" title="Play Now"><i class="fas fa-play"></i></button>
+                    <button id="addToPlaylistBtn" title="Add to Playlist"><i class="fas fa-plus"></i></button>
+                </div>
+                <div class="browse-group">
+                    <input type="file" id="fileInput" hidden accept="audio/*,video/*" multiple>
+                    <button id="browseBtn" class="secondary-btn"><i class="fas fa-folder-open"></i> Browse</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-layout">
+            <aside class="sidebar">
+                <div class="tabs-header">
+                    <button class="tab-btn active" data-tab="playlist">Playlist</button>
+                    <button class="tab-btn" data-tab="radio">Radio</button>
+                </div>
+                
+                <div class="tab-content active" id="playlistTab">
+                    <div class="playlist-header">
+                        <span>Queue</span>
+                        <button id="clearPlaylist" class="text-btn">Clear</button>
+                    </div>
+                    <ul id="playlistItems" class="playlist-items">
+                        <!-- Items added dynamically -->
+                        <li class="empty-msg">No items in playlist</li>
+                    </ul>
+                </div>
+
+                <div class="tab-content" id="radioTab">
+                    <div class="genre-selector">
+                        <button class="genre-btn active" data-genre="all">All</button>
+                        <button class="genre-btn" data-genre="music">Music</button>
+                        <button class="genre-btn" data-genre="bhakti">Bhakti</button>
+                        <button class="genre-btn" data-genre="remix">Remix</button>
+                        <button class="genre-btn" data-genre="dj">DJ</button>
+                    </div>
+                    <ul id="radioItems" class="playlist-items">
+                        <!-- Radio stations pre-populated -->
+                    </ul>
+                </div>
+            </aside>
+
+            <main class="player-main">
+                <div id="playerWrapper" class="player-wrapper">
+                <div id="videoContainer" class="video-container">
+                    <video id="videoPlayer" playsinline crossorigin="anonymous"></video>
+                    <audio id="audioPlayer" style="display: none;"></audio>
+                    
+                    <!-- Custom Overlay Controls -->
+                    <div class="player-overlay" id="playerOverlay">
+                        <div class="big-play-btn" id="bigPlayBtn">
+                            <i class="fas fa-play"></i>
+                        </div>
+                        
+                        <div class="top-controls">
+                            <div class="now-playing-title" id="nowPlayingTitle">Waiting for media...</div>
+                            <div class="window-controls">
+                                <button id="pipBtn" title="Picture in Picture"><i class="fas fa-external-link-alt"></i></button>
+                                <button id="fullscreenBtn" title="Toggle Fullscreen"><i class="fas fa-expand"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="bottom-controls">
+                            <div class="progress-bar-container" id="progressContainer">
+                                <div class="progress-bar" id="progressBar"></div>
+                                <div class="progress-hover" id="progressHover"></div>
+                            </div>
+                            
+                            <div class="control-groups">
+                                <div class="left-group">
+                                    <button id="prevBtn" title="Previous"><i class="fas fa-step-backward"></i></button>
+                                    <button id="skipBackBtn" title="Back 1.5 min"><i class="fas fa-undo"></i><span>90s</span></button>
+                                    <button id="playPauseBtn" class="main-toggle"><i class="fas fa-play"></i></button>
+                                    <button id="skipForwardBtn" title="Forward 1.5 min"><i class="fas fa-redo"></i><span>90s</span></button>
+                                    <button id="nextBtn" title="Next"><i class="fas fa-step-forward"></i></button>
+                                    <button id="stopBtn" title="Stop"><i class="fas fa-stop"></i></button>
+                                    <div class="time-display">
+                                        <span id="currentTime">00:00</span> / <span id="duration">00:00</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="right-group">
+                                    <div class="volume-control">
+                                        <button id="muteBtn"><i class="fas fa-volume-up"></i></button>
+                                        <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="1">
+                                    </div>
+                                    <button id="shareBtn" title="Share Link"><i class="fas fa-share-alt"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </main>
+        </div>
+
+            <section class="media-info-panel" id="infoPanel">
+                <div class="info-header">
+                    <h2>Media Information</h2>
+                    <span class="badge" id="mediaFormat">Detecting...</span>
+                </div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Filename</label>
+                        <p id="infoName">-</p>
+                    </div>
+                    <div class="info-item">
+                        <label>Duration</label>
+                        <p id="infoDuration">-</p>
+                    </div>
+                    <div class="info-item">
+                        <label>Dimensions</label>
+                        <p id="infoRes">-</p>
+                    </div>
+                    <div class="info-item">
+                        <label>Source</label>
+                        <p id="infoSource">-</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Supported Formats: MP4, MOV, AVI, MKV, WMV, WebM, M3U8, MP3, WAV, FLAC, and more...</p>
+        </footer>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
