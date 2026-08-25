@@ -1,63 +1,208 @@
 <!DOCTYPE html><html lang="en"><head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Soundboard Emotion Studio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Mobile Web IP Camera</title>
+    <!-- External Libraries -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     
 <link rel="stylesheet" href="style.css" /></head>
 <body>
 
-    <header>
-        <h1>🎛️ EMOTION STUDIO</h1>
-        <div class="controls">
-            <div class="mode-selector">
-                <label class="mode-option">
-                    <input type="radio" name="mode" value="Normal" checked="" />
-                    <span class="mode-btn">Normal</span>
-                </label>
-                <label class="mode-option">
-                    <input type="radio" name="mode" value="Repeat" />
-                    <span class="mode-btn">Repeat</span>
-                </label>
-                <label class="mode-option">
-                    <input type="radio" name="mode" value="Continue" />
-                    <span class="mode-btn">Continue</span>
-                </label>
-            </div>
-            
-            <div class="volume-control">
-                <span>🔊</span>
-                <input type="range" id="masterVolume" min="0" max="1" step="0.01" value="0.8" />
-            </div>
+<header>
+    <h1><i class="fas fa-video"></i> Web IP Cam</h1>
+    <button id="theme-toggle" onclick="toggleTheme()" style="padding: 8px; border: none; background: transparent;"><i class="fas fa-moon"></i></button>
+</header>
 
-            <button class="rec-btn" id="recBtn">
-                <span class="rec-dot"></span> <span id="recText">REC</span>
-            </button>
+<main>
+    <!-- HOME VIEW (Dashboard) -->
+    <section id="view-home" class="view active">
+        <div class="dashboard-card">
+            <h2 style="margin-top:0;">Dashboard</h2>
+            <div class="stat-grid">
+                <div class="stat"><span>Camera Status</span><strong id="stat-status" class="offline">Offline</strong></div>
+                <div class="stat"><span>Connected Users</span><strong id="stat-users">0</strong></div>
+                <div class="stat"><span>Resolution</span><strong id="stat-res">-</strong></div>
+                <div class="stat"><span>FPS</span><strong id="stat-fps">0</strong></div>
+                <div class="stat"><span>Bitrate</span><strong id="stat-bitrate">-</strong></div>
+                <div class="stat"><span>Recording</span><strong id="stat-rec" style="color:inherit;">OFF</strong></div>
+                <div class="stat"><span>Battery</span><strong id="stat-battery">-</strong></div>
+                <div class="stat"><span>Temperature</span><strong>Normal</strong></div>
+            </div>
+            <div style="margin-top: 20px;">
+                <button class="primary" onclick="switchView('viewer')" style="width:100%;"><i class="fas fa-eye"></i> Open Viewer Mode</button>
+            </div>
         </div>
-    </header>
 
-    <div class="tabs">
-        <button class="tab-btn active" data-tab="Happiness">😊 Happiness</button>
-        <button class="tab-btn" data-tab="Sadness">😢 Sadness</button>
-        <button class="tab-btn" data-tab="Fear">😨 Fear</button>
-        <button class="tab-btn" data-tab="Anger">😡 Anger</button>
-        <button class="tab-btn" data-tab="Disgust">🤢 Disgust</button>
-        <button class="tab-btn" data-tab="Surprise">😲 Surprise</button>
-    </div>
+        <!-- WIFI IP CAMERA STREAMING SERVER CARD ON DASHBOARD -->
+        <div class="dashboard-card" style="margin-top: 15px;">
+            <h2 style="margin-top:0;"><i class="fas fa-wifi"></i> WiFi IP Camera Stream Server</h2>
+            <p style="font-size:13px; opacity:0.8; margin-bottom: 12px;">View live IP camera streaming in any web browser on the same WiFi network.</p>
+            
+            <div class="status-badge offline server-status-elem" style="margin-bottom:12px;">Server: Stopped</div>
+            
+            <button class="primary btn-start-server-elem" onclick="startServer()" style="width:100%; margin-bottom:12px;"><i class="fas fa-play"></i> Start IP Camera Server</button>
 
-    <main>
-        <div class="import-section">
-            <button class="import-btn" onclick="document.getElementById('fileInput').click()">+ Import MP3s</button>
-            <input type="file" id="fileInput" accept="audio/*" multiple="" />
-            <span id="statusText" style="color: var(--text-muted); font-size: 0.9rem;">Ready</span>
+            <div class="server-info-elem hidden">
+                <div class="info-row"><span>WiFi IP Address:</span> <strong class="display-mock-ip-elem">Detecting...</strong></div>
+                <div class="info-row"><span>Web Browser Stream Link:</span> <strong class="display-stream-url-elem" style="font-size:12px; word-break:break-all; color:var(--primary-color);">http://192.168.1.x:8080</strong></div>
+                <div class="info-row"><span>Camera ID:</span> <strong class="display-peer-id-elem" style="font-size:12px; word-break:break-all;">Generating...</strong></div>
+                
+                <div class="qr-container qrcode-elem" style="display:flex; justify-content:center; margin:15px auto; padding:10px; background:#fff; border-radius:8px; width:fit-content;"></div>
+                <p class="hint" style="text-align:center; font-size:12px; opacity:0.8;">Open the stream link or scan QR code in any browser on the same WiFi network.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CAMERA VIEW -->
+    <section id="view-camera" class="view">
+        <div class="video-container">
+            <video id="local-video" autoplay="" playsinline="" muted=""></video>
+            <div id="recording-indicator" class="hidden">🔴 REC <span id="rec-timer">00:00</span></div>
+        </div>
+        <div class="controls-grid">
+            <button onclick="startCamera()"><i class="fas fa-play"></i> Start</button>
+            <button onclick="stopCamera()"><i class="fas fa-stop"></i> Stop</button>
+            <button onclick="pauseStream()"><i class="fas fa-pause"></i> Pause</button>
+            <button onclick="resumeStream()"><i class="fas fa-forward"></i> Resume</button>
+            <button onclick="switchCamera()"><i class="fas fa-sync"></i> Switch</button>
+            <button onclick="toggleTorch()"><i class="fas fa-bolt"></i> Flash</button>
+            <button onclick="toggleMute()"><i class="fas fa-microphone-slash"></i> Mute</button>
+            <button onclick="toggleQuality()"><i class="fas fa-hd"></i> HD/SD</button>
+            <button onclick="rotateCamera()"><i class="fas fa-redo"></i> Rotate</button>
+            <button onclick="toggleRecording()"><i class="fas fa-circle" style="color:var(--danger-color)"></i> Record</button>
+            <button onclick="captureLocalSnapshot()"><i class="fas fa-camera"></i> Snap</button>
+            <button onclick="adjustZoom(0.5)"><i class="fas fa-search-plus"></i> Zoom +</button>
+            <button onclick="adjustZoom(-0.5)"><i class="fas fa-search-minus"></i> Zoom -</button>
+            <button onclick="toggleFullscreen('local-video')"><i class="fas fa-expand"></i> Full</button>
+        </div>
+    </section>
+
+    <!-- NETWORK VIEW -->
+    <section id="view-network" class="view">
+        <div class="network-card">
+            <h2>Camera Server</h2>
+            <div class="status-badge offline" id="server-status">Stopped</div>
+            <br />
+            <button id="btn-start-server" class="primary" onclick="startServer()" style="width:100%; margin-top:10px;">Start Camera Server</button>
+            
+            <div id="server-info" class="hidden">
+                <div class="info-row"><span>Local IP Address:</span> <strong id="display-mock-ip">192.168.1.x</strong></div>
+                <div class="info-row"><span>Port:</span> <strong>8080</strong></div>
+                <div class="info-row"><span>Camera ID:</span> <strong id="display-peer-id" style="font-size:12px; word-break:break-all;">Generating...</strong></div>
+                <div class="info-row"><span>Status:</span> <strong class="online">Online</strong></div>
+                
+                <div id="qrcode" class="qr-container"></div>
+                <p class="hint">Scan QR code with another device on the same WiFi to view the live stream instantly.</p>
+                
+                <button onclick="switchView('viewer')" style="width:100%; margin-top:15px;"><i class="fas fa-eye"></i> Open Viewer Mode</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- RECORDINGS VIEW -->
+    <section id="view-recordings" class="view">
+        <h2>File Manager</h2>
+        <div id="recordings-list" class="recordings-list">
+            <p style="opacity:0.6; text-align:center;">No recordings yet.</p>
+        </div>
+    </section>
+
+    <!-- SETTINGS VIEW -->
+    <section id="view-settings" class="view">
+        <h2>Settings</h2>
+        
+        <div style="background: var(--surface-color); padding: 15px; border-radius: var(--border-radius); margin-bottom: 20px;">
+            <h3 style="margin-top:0; font-size:15px; border-bottom:1px solid rgba(128,128,128,0.2); padding-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                <span><i class="fas fa-network-wired"></i> IP Camera Network Info</span>
+                <button onclick="detectWiFiIP()" title="Refresh WiFi IP" style="background:none; border:none; padding:4px 8px; cursor:pointer; color:var(--primary-color); font-size:14px;"><i class="fas fa-sync-alt"></i> Refresh IP</button>
+            </h3>
+            <div class="info-row"><span>WiFi IP Address:</span> <strong class="display-mock-ip-elem">Detecting...</strong></div>
+            <div class="info-row"><span>Stream Link:</span> <strong class="display-stream-url-elem" style="font-size:12px; word-break:break-all; color:var(--primary-color);">http://192.168.1.x:8080</strong></div>
+            <div class="info-row"><span>Camera ID:</span> <strong class="display-peer-id-elem" style="font-size:12px; word-break:break-all;">Stopped</strong></div>
+            
+            <div style="margin-top: 15px; text-align: center;">
+                <div style="font-size:12px; opacity:0.85; margin-bottom:8px; font-weight:600;"><i class="fas fa-qrcode"></i> Streaming Link QR Code:</div>
+                <div class="qr-container qrcode-elem" style="display:flex; justify-content:center; margin:0 auto; padding:10px; background:#ffffff; border-radius:8px; width:fit-content;"></div>
+                <p class="hint" style="font-size:11px; opacity:0.7; margin-top:6px;">Scan with any phone or web browser on the same WiFi network to view stream</p>
+            </div>
+        </div>
+
+        <div class="settings-form">
+            <label>Default Resolution
+                <select id="setting-resolution">
+                    <option value="240p">240p (Low)</option>
+                    <option value="360p">360p</option>
+                    <option value="480p">480p (SD)</option>
+                    <option value="720p" selected="">720p (HD)</option>
+                    <option value="1080p">1080p (FHD)</option>
+                </select>
+            </label>
+            <label>Default Camera
+                <select id="setting-camera">
+                    <option value="environment">Rear Camera</option>
+                    <option value="user">Front Camera</option>
+                </select>
+            </label>
+            <label>Password Protection (Optional)
+                <input type="password" id="setting-password" placeholder="Leave blank for no password" />
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="setting-audio" checked="" /> Audio Enabled
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="setting-wake-lock" checked="" /> Keep Screen On (Wake Lock)
+            </label>
+            <button class="primary" onclick="saveSettings()" style="width:100%; margin-top:10px;">Save Settings</button>
+        </div>
+    </section>
+
+    <!-- VIEWER VIEW -->
+    <section id="view-viewer" class="view">
+        <div id="viewer-connect-panel">
+            <h2>Remote Viewer</h2>
+            <p style="font-size:13px; opacity:0.7;">View live IP camera streaming in any web browser without needing a camera on this device. Enter the Camera ID or IP Address shown on the host device.</p>
+            <input type="text" id="viewer-peer-id" placeholder="Camera ID / IP Address (e.g. abc-123-xyz)" />
+            <input type="password" id="viewer-password" placeholder="Password (if required)" />
+            <button class="primary" onclick="connectToCamera()" style="width:100%; margin-bottom:10px;">Connect to Camera</button>
+            <button onclick="startQRScanner()" id="btn-scan-qr" style="width:100%;"><i class="fas fa-qrcode"></i> Scan QR Code</button>
+            <div id="qr-scanner-container" style="display:none; margin-top:15px; background:white; border-radius:8px; overflow:hidden;">
+                <div id="qr-reader" style="width:100%;"></div>
+                <button onclick="switchQRCamera()" style="width:100%; border-radius:0;"><i class="fas fa-sync"></i> Switch Camera</button>
+            </div>
         </div>
         
-        <div id="padGrid"></div>
-    </main>
+        <div id="viewer-video-panel" class="hidden">
+            <div class="viewer-stats">
+                <span><i class="fas fa-signal"></i> FPS: <strong id="viewer-fps">0</strong></span>
+                <span><i class="fas fa-desktop"></i> Res: <strong id="viewer-res">-</strong></span>
+            </div>
+            <div class="video-container">
+                <video id="remote-video" autoplay="" playsinline=""></video>
+            </div>
+            <div class="controls-grid">
+                <button onclick="captureSnapshot()"><i class="fas fa-camera"></i> Snap</button>
+                <button onclick="sendRemoteCommand('start_recording')"><i class="fas fa-circle" style="color:var(--danger-color)"></i> Rec Start</button>
+                <button onclick="sendRemoteCommand('stop_recording')"><i class="fas fa-square"></i> Rec Stop</button>
+                <button onclick="sendRemoteCommand('switch_camera')"><i class="fas fa-sync"></i> Switch Cam</button>
+                <button onclick="sendRemoteCommand('toggle_flash')"><i class="fas fa-bolt"></i> Flash</button>
+                <button onclick="toggleFullscreen('remote-video')"><i class="fas fa-expand"></i> Full</button>
+            </div>
+            <button onclick="disconnectViewer()" style="width:100%; background:var(--danger-color); color:white; border:none; margin-top:10px;">Disconnect</button>
+        </div>
+    </section>
+</main>
 
-    <div id="recIndicator">
-        <span class="rec-dot"></span> RECORDING: <span id="recTime">00:00</span>
-    </div>
+<nav class="bottom-nav">
+    <button onclick="switchView('home')" class="nav-btn active"><i class="fas fa-home"></i>Home</button>
+    <button onclick="switchView('camera')" class="nav-btn"><i class="fas fa-camera"></i>Camera</button>
+    <button onclick="switchView('network')" class="nav-btn"><i class="fas fa-wifi"></i>Network</button>
+    <button onclick="switchView('recordings')" class="nav-btn"><i class="fas fa-folder"></i>Files</button>
+    <button onclick="switchView('settings')" class="nav-btn"><i class="fas fa-cog"></i>Settings</button>
+</nav>
 
-    
+
 
 <script src="script.js"></script></body></html>
