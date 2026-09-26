@@ -2107,6 +2107,317 @@ function setupCanvasInteraction() {
 }
 
 // ============================================================
+// 32. THEME & APPEARANCE SYSTEM
+// ============================================================
+function initTheme() {
+  const savedTheme = localStorage.getItem('cutflow_theme') || 'default';
+  const savedAccent = localStorage.getItem('cutflow_accent');
+
+  applyTheme(savedTheme);
+  if (savedAccent) applyAccent(savedAccent);
+
+  // Theme cards click
+  document.querySelectorAll('.theme-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const theme = card.dataset.theme;
+      applyTheme(theme);
+    });
+  });
+
+  // Accent swatches click
+  document.querySelectorAll('.accent-swatch').forEach(swatch => {
+    swatch.addEventListener('click', () => {
+      const color = swatch.dataset.color;
+      applyAccent(color);
+    });
+  });
+
+  // Custom accent color picker
+  const customAccentInput = document.getElementById('customAccentInput');
+  if (customAccentInput) {
+    if (savedAccent) customAccentInput.value = savedAccent;
+    customAccentInput.addEventListener('input', e => {
+      applyAccent(e.target.value);
+    });
+  }
+}
+
+function applyTheme(themeName) {
+  if (themeName === 'default') {
+    document.documentElement.removeAttribute('data-theme');
+    document.body.removeAttribute('data-theme');
+  } else {
+    document.documentElement.setAttribute('data-theme', themeName);
+    document.body.setAttribute('data-theme', themeName);
+  }
+  localStorage.setItem('cutflow_theme', themeName);
+
+  document.querySelectorAll('.theme-card').forEach(c => {
+    c.classList.toggle('active', c.dataset.theme === themeName);
+  });
+}
+
+function applyAccent(color) {
+  document.documentElement.style.setProperty('--accent', color);
+  document.documentElement.style.setProperty('--border-active', color);
+  document.documentElement.style.setProperty('--accent-glow', color + '4d'); // 30% alpha
+  localStorage.setItem('cutflow_accent', color);
+
+  document.querySelectorAll('.accent-swatch').forEach(s => {
+    s.classList.toggle('active', s.dataset.color === color);
+  });
+  const customAccentInput = document.getElementById('customAccentInput');
+  if (customAccentInput) customAccentInput.value = color;
+}
+
+// ============================================================
+// 33. MOBILE BOTTOM NAVIGATION & SUBBAR SYSTEM
+// ============================================================
+let mobileNavState = {
+  activeTab: 'option', // 'option' | 'effect' | 'setting' | 'inspector'
+  drawerOpen: true,
+  lastAdjustedHeight: '46vh',
+  subTabMap: {
+    option: 'media',
+    effect: 'effects',
+    setting: 'fonts',
+    inspector: 'inspector'
+  }
+};
+
+function showDrawer(height) {
+  const sidebar = document.getElementById('leftSidebar');
+  if (!sidebar) return;
+  sidebar.classList.remove('drawer-hidden');
+  mobileNavState.drawerOpen = true;
+  if (height) {
+    sidebar.style.height = height;
+    sidebar.style.setProperty('--drawer-height', height);
+  } else if (mobileNavState.lastAdjustedHeight) {
+    sidebar.style.height = mobileNavState.lastAdjustedHeight;
+    sidebar.style.setProperty('--drawer-height', mobileNavState.lastAdjustedHeight);
+  }
+  // Highlight active bottom tab
+  document.querySelectorAll('.mb-nav-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.tab === mobileNavState.activeTab);
+  });
+}
+
+function hideDrawer() {
+  const sidebar = document.getElementById('leftSidebar');
+  if (!sidebar) return;
+  sidebar.classList.add('drawer-hidden');
+  mobileNavState.drawerOpen = false;
+  // Clear active styling on bottom nav tabs to indicate drawer is closed
+  document.querySelectorAll('.mb-nav-tab').forEach(tab => {
+    tab.classList.remove('active');
+  });
+}
+
+function switchMobileTab(tabKey) {
+  const prevTab = mobileNavState.activeTab;
+  const isSameTab = prevTab === tabKey;
+
+  // Toggle hide/show if tapping the same tab when drawer is open
+  if (isSameTab && mobileNavState.drawerOpen) {
+    hideDrawer();
+    return;
+  }
+
+  mobileNavState.activeTab = tabKey;
+
+  // Ensure drawer is open
+  showDrawer();
+
+  // Highlight bottom navigation tab
+  document.querySelectorAll('.mb-nav-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.tab === tabKey);
+  });
+
+  // Switch visible subgroup in drawer subbar
+  const subgroups = {
+    option: document.getElementById('subgroup-option'),
+    effect: document.getElementById('subgroup-effect'),
+    setting: document.getElementById('subgroup-setting'),
+    inspector: document.getElementById('subgroup-inspector')
+  };
+
+  Object.keys(subgroups).forEach(key => {
+    if (subgroups[key]) {
+      subgroups[key].style.display = key === tabKey ? 'flex' : 'none';
+    }
+  });
+
+  // Activate the corresponding panel for this tab
+  const activePanelKey = mobileNavState.subTabMap[tabKey] || 'media';
+  activatePanel(activePanelKey);
+
+  // Update active sub-btn inside subgroup
+  const currentSubgroup = subgroups[tabKey];
+  if (currentSubgroup) {
+    currentSubgroup.querySelectorAll('.drawer-sub-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.panel === activePanelKey);
+    });
+  }
+}
+
+function activatePanel(panelKey) {
+  document.querySelectorAll('.lpanel').forEach(p => p.classList.remove('active'));
+  const targetPanel = document.getElementById('panel-' + panelKey);
+  if (targetPanel) {
+    targetPanel.classList.add('active');
+  }
+
+  // Sync desktop leftNav buttons
+  document.querySelectorAll('.lnav-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.panel === panelKey);
+  });
+}
+
+function setupMobileNavigation() {
+  // Bottom navigation tabs
+  document.querySelectorAll('.mb-nav-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const tabKey = tab.dataset.tab;
+      switchMobileTab(tabKey);
+    });
+  });
+
+  // Sub-buttons inside drawer subbar
+  document.querySelectorAll('.drawer-sub-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const panelKey = btn.dataset.panel;
+      // Mark sub-btn active in its subgroup
+      const parentSubgroup = btn.closest('.drawer-subgroup');
+      if (parentSubgroup) {
+        parentSubgroup.querySelectorAll('.drawer-sub-btn').forEach(b => b.classList.remove('active'));
+      }
+      btn.classList.add('active');
+
+      // Update stored panel for current tab
+      if (mobileNavState.activeTab && mobileNavState.subTabMap) {
+        mobileNavState.subTabMap[mobileNavState.activeTab] = panelKey;
+      }
+
+      activatePanel(panelKey);
+    });
+  });
+
+  // Drawer close button (downward chevron)
+  document.getElementById('drawerCloseBtn')?.addEventListener('click', () => {
+    hideDrawer();
+  });
+}
+
+// ============================================================
+// 34. DRAGGABLE & ADJUSTABLE DRAWER WINDOW
+// ============================================================
+function setupDrawerDrag() {
+  const handle = document.getElementById('mobileDrawerHandle');
+  const sidebar = document.getElementById('leftSidebar');
+  if (!handle || !sidebar) return;
+
+  let isDragging = false;
+  let startY = 0;
+  let startHeight = 0;
+  let currentHeight = 0;
+
+  handle.addEventListener('pointerdown', e => {
+    if (window.innerWidth > 768) return;
+    isDragging = true;
+    startY = e.clientY;
+    startHeight = sidebar.offsetHeight;
+    currentHeight = startHeight;
+    sidebar.classList.add('drawer-dragging');
+    try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+    e.preventDefault();
+  });
+
+  handle.addEventListener('pointermove', e => {
+    if (!isDragging) return;
+    const deltaY = e.clientY - startY;
+    // Dragging DOWN reduces height, dragging UP increases height
+    let newHeight = startHeight - deltaY;
+    const minH = 50;
+    const maxH = window.innerHeight - 80;
+    newHeight = Math.max(minH, Math.min(maxH, newHeight));
+    currentHeight = newHeight;
+
+    sidebar.style.setProperty('--drawer-height', newHeight + 'px');
+    sidebar.style.height = newHeight + 'px';
+  });
+
+  const onDragEnd = e => {
+    if (!isDragging) return;
+    isDragging = false;
+    sidebar.classList.remove('drawer-dragging');
+    try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
+
+    const totalDelta = e.clientY - startY;
+
+    // If dragged DOWN towards the tabs buttons (delta > 75) or final height < 120px:
+    if (totalDelta > 75 || currentHeight < 120) {
+      hideDrawer();
+    } else {
+      // Snap to comfortable window height or retain user adjustment
+      let snapHeight = currentHeight;
+      const vh = window.innerHeight;
+      if (currentHeight > vh * 0.62) {
+        snapHeight = Math.round(vh * 0.76);
+      } else if (currentHeight > vh * 0.32) {
+        snapHeight = Math.round(vh * 0.46);
+      } else {
+        snapHeight = 240;
+      }
+      sidebar.style.setProperty('--drawer-height', snapHeight + 'px');
+      sidebar.style.height = snapHeight + 'px';
+      mobileNavState.lastAdjustedHeight = snapHeight + 'px';
+      showDrawer(snapHeight + 'px');
+    }
+  };
+
+  handle.addEventListener('pointerup', onDragEnd);
+  handle.addEventListener('pointercancel', onDragEnd);
+}
+
+// ============================================================
+// 35. RESPONSIVE LAYOUT & INSPECTOR SYNCHRONIZATION
+// ============================================================
+function setupResponsiveLayout() {
+  const syncLayout = () => {
+    const isMobile = window.innerWidth <= 768;
+    const inspector = document.getElementById('inspectorPanel');
+    const mobilePanelInspector = document.getElementById('panel-inspector');
+    const rightSidebar = document.getElementById('rightSidebar');
+    const leftSidebar = document.getElementById('leftSidebar');
+
+    if (isMobile) {
+      // Move inspector inside mobile drawer container
+      if (inspector && mobilePanelInspector && !mobilePanelInspector.contains(inspector)) {
+        mobilePanelInspector.appendChild(inspector);
+      }
+      // If mobile view, ensure initial drawer height is set
+      if (leftSidebar && !leftSidebar.style.height && !leftSidebar.classList.contains('drawer-hidden')) {
+        leftSidebar.style.setProperty('--drawer-height', mobileNavState.lastAdjustedHeight || '46vh');
+        leftSidebar.style.height = mobileNavState.lastAdjustedHeight || '46vh';
+      }
+    } else {
+      // Move inspector back to desktop right sidebar
+      if (inspector && rightSidebar && !rightSidebar.contains(inspector)) {
+        rightSidebar.appendChild(inspector);
+      }
+      if (leftSidebar) {
+        leftSidebar.classList.remove('drawer-hidden');
+        leftSidebar.style.height = '';
+      }
+    }
+  };
+
+  window.addEventListener('resize', syncLayout);
+  syncLayout();
+}
+
+// ============================================================
 // INITIALIZATION
 // ============================================================
 function init() {
@@ -2139,6 +2450,10 @@ function init() {
   setupRulerClick();
   setupResize();
   bindInspectorControls();
+  initTheme();
+  setupMobileNavigation();
+  setupDrawerDrag();
+  setupResponsiveLayout();
 
   // Initial render
   renderCanvas();
