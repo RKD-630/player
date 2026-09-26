@@ -1,208 +1,413 @@
-<!DOCTYPE html><html lang="en"><head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Mobile Web IP Camera</title>
-    <!-- External Libraries -->
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    
-<link rel="stylesheet" href="style.css" /></head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CutFlow — Professional Video Editor</title>
+  <meta name="description" content="CutFlow is a powerful browser-based video editor with multi-track timeline, text animation, effects, transitions, and MP4 export." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
 <body>
+  <div id="app">
+    <header id="topbar">
+      <div class="topbar-left">
+        <div class="logo">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <rect width="28" height="28" rx="7" fill="url(#logoGrad)"/>
+            <path d="M8 9l7 5-7 5V9z" fill="white"/>
+            <rect x="17" y="9" width="3" height="10" rx="1.5" fill="white"/>
+            <defs>
+              <linearGradient id="logoGrad" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#6C63FF"/><stop offset="1" stop-color="#FF6584"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <span class="logo-text">CutFlow</span>
+        </div>
+        <div class="project-name-wrap">
+          <input id="projectName" type="text" value="Untitled Project" spellcheck="false" />
+        </div>
+      </div>
+      <div class="topbar-center">
+        <button id="btnUndo" class="tb-btn" title="Undo (Ctrl+Z)"><svg viewBox="0 0 20 20"><path d="M4 5h8a4 4 0 010 8H8" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M4 5l3-3M4 5l3 3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Undo</span></button>
+        <button id="btnRedo" class="tb-btn" title="Redo (Ctrl+Shift+Z)"><svg viewBox="0 0 20 20"><path d="M16 5H8a4 4 0 000 8h4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M16 5l-3-3M16 5l-3 3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Redo</span></button>
+        <div class="tb-divider"></div>
+        <button id="btnRatio" class="tb-btn tb-pill" title="Canvas Ratio"><svg viewBox="0 0 20 20"><rect x="2" y="4" width="16" height="12" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg><span id="currentRatioLabel">16:9</span><svg class="chevron" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></button>
+        <div class="tb-divider"></div>
+        <button id="btnNewProject" class="tb-btn" title="New Project"><svg viewBox="0 0 20 20"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>New</span></button>
+        <button id="btnSave" class="tb-btn" title="Save Project"><svg viewBox="0 0 20 20"><path d="M4 4h9l3 3v9a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="7" y="13" width="6" height="4" rx="0.5" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="7" y="4" width="5" height="4" rx="0.5" fill="currentColor" opacity=".6"/></svg><span>Save</span></button>
+      </div>
+      <div class="topbar-right">
+        <button id="btnPreview" class="tb-btn" title="Fullscreen Preview"><svg viewBox="0 0 20 20"><path d="M3 7V4h3M17 7V4h-3M3 13v3h3M17 13v3h-3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg><span>Preview</span></button>
+        <button id="btnExport" class="tb-btn tb-export" title="Export Video"><svg viewBox="0 0 20 20"><path d="M10 3v10M6 9l4 4 4-4M4 15h12" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg><span>Export</span></button>
+      </div>
+    </header>
 
-<header>
-    <h1><i class="fas fa-video"></i> Web IP Cam</h1>
-    <button id="theme-toggle" onclick="toggleTheme()" style="padding: 8px; border: none; background: transparent;"><i class="fas fa-moon"></i></button>
-</header>
-
-<main>
-    <!-- HOME VIEW (Dashboard) -->
-    <section id="view-home" class="view active">
-        <div class="dashboard-card">
-            <h2 style="margin-top:0;">Dashboard</h2>
-            <div class="stat-grid">
-                <div class="stat"><span>Camera Status</span><strong id="stat-status" class="offline">Offline</strong></div>
-                <div class="stat"><span>Connected Users</span><strong id="stat-users">0</strong></div>
-                <div class="stat"><span>Resolution</span><strong id="stat-res">-</strong></div>
-                <div class="stat"><span>FPS</span><strong id="stat-fps">0</strong></div>
-                <div class="stat"><span>Bitrate</span><strong id="stat-bitrate">-</strong></div>
-                <div class="stat"><span>Recording</span><strong id="stat-rec" style="color:inherit;">OFF</strong></div>
-                <div class="stat"><span>Battery</span><strong id="stat-battery">-</strong></div>
-                <div class="stat"><span>Temperature</span><strong>Normal</strong></div>
+    <div id="workspace">
+      <aside id="leftSidebar">
+        <nav id="leftNav">
+          <button class="lnav-btn active" data-panel="media" title="Media"><svg viewBox="0 0 20 20"><rect x="2" y="4" width="10" height="8" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M12 7l5-3v8l-5-3V7z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/><path d="M2 15h16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><span>Media</span></button>
+          <button class="lnav-btn" data-panel="audio" title="Audio"><svg viewBox="0 0 20 20"><path d="M7 6v8M10 4v12M4 8v4M13 5v10M16 7v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><span>Audio</span></button>
+          <button class="lnav-btn" data-panel="text" title="Text"><svg viewBox="0 0 20 20"><path d="M4 6h12M10 6v10M7 16h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><span>Text</span></button>
+          <button class="lnav-btn" data-panel="effects" title="Effects"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M10 3c3.9 0 7 3.1 7 7s-3.1 7-7 7" stroke="currentColor" stroke-width="1.4" fill="none"/><circle cx="10" cy="10" r="2.5" fill="currentColor" opacity=".5"/></svg><span>Effects</span></button>
+          <button class="lnav-btn" data-panel="transitions" title="Transitions"><svg viewBox="0 0 20 20"><rect x="2" y="6" width="6" height="8" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="12" y="6" width="6" height="8" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M8 10h4M10 8l2 2-2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Trans.</span></button>
+          <button class="lnav-btn" data-panel="background" title="Background"><svg viewBox="0 0 20 20"><rect x="2" y="2" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.4" fill="none"/><circle cx="7" cy="7" r="1.5" fill="currentColor"/><path d="M2 13l5-4 4 3 3-3 4 4" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>BG</span></button>
+          <button class="lnav-btn" data-panel="fonts" title="Fonts"><svg viewBox="0 0 20 20"><path d="M4 16L9 4l5 12M6 12h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 8v8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M13 8h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><span>Fonts</span></button>
+        </nav>
+        <div id="leftPanels">
+          <div class="lpanel active" id="panel-media">
+            <div class="panel-header"><span>Media Library</span>
+              <label class="import-btn" id="importLabel"><svg viewBox="0 0 16 16"><path d="M8 2v8M5 7l3 3 3-3M2 12h12" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>Import<input type="file" id="importInput" multiple accept="video/*,audio/*,image/*,.gif,.webp,.mov,.avi,.mkv,.mp3,.wav,.aac,.m4a" /></label>
             </div>
-            <div style="margin-top: 20px;">
-                <button class="primary" onclick="switchView('viewer')" style="width:100%;"><i class="fas fa-eye"></i> Open Viewer Mode</button>
+            <div class="panel-search"><input type="text" id="mediaSearch" placeholder="Search media..." /></div>
+            <div id="mediaLibrary" class="media-library">
+              <div class="empty-state">
+                <svg viewBox="0 0 48 48" width="48" height="48" opacity=".3"><rect x="4" y="10" width="28" height="20" rx="3" stroke="currentColor" stroke-width="2" fill="none"/><path d="M32 17l9-5v16l-9-5v-6z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/><path d="M4 38h40" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                <p>Import media to begin</p><span>Video · Audio · Images</span>
+                <button id="btnLoadDemo" class="apply-btn" style="margin-top:14px;font-size:12px;padding:7px 16px;width:auto">⚡ Load Demo Project</button>
+              </div>
             </div>
-        </div>
-
-        <!-- WIFI IP CAMERA STREAMING SERVER CARD ON DASHBOARD -->
-        <div class="dashboard-card" style="margin-top: 15px;">
-            <h2 style="margin-top:0;"><i class="fas fa-wifi"></i> WiFi IP Camera Stream Server</h2>
-            <p style="font-size:13px; opacity:0.8; margin-bottom: 12px;">View live IP camera streaming in any web browser on the same WiFi network.</p>
-            
-            <div class="status-badge offline server-status-elem" style="margin-bottom:12px;">Server: Stopped</div>
-            
-            <button class="primary btn-start-server-elem" onclick="startServer()" style="width:100%; margin-bottom:12px;"><i class="fas fa-play"></i> Start IP Camera Server</button>
-
-            <div class="server-info-elem hidden">
-                <div class="info-row"><span>WiFi IP Address:</span> <strong class="display-mock-ip-elem">Detecting...</strong></div>
-                <div class="info-row"><span>Web Browser Stream Link:</span> <strong class="display-stream-url-elem" style="font-size:12px; word-break:break-all; color:var(--primary-color);">http://192.168.1.x:8080</strong></div>
-                <div class="info-row"><span>Camera ID:</span> <strong class="display-peer-id-elem" style="font-size:12px; word-break:break-all;">Generating...</strong></div>
-                
-                <div class="qr-container qrcode-elem" style="display:flex; justify-content:center; margin:15px auto; padding:10px; background:#fff; border-radius:8px; width:fit-content;"></div>
-                <p class="hint" style="text-align:center; font-size:12px; opacity:0.8;">Open the stream link or scan QR code in any browser on the same WiFi network.</p>
+          </div>
+          <div class="lpanel" id="panel-audio">
+            <div class="panel-header"><span>Audio</span></div>
+            <div class="audio-info"><p>Import audio files from Media Library or drag audio clips onto the timeline.</p><div class="tip-box"><b>Supported:</b> MP3, WAV, AAC, M4A, OGG</div></div>
+          </div>
+          <div class="lpanel" id="panel-text">
+            <div class="panel-header"><span>Add Text</span></div>
+            <div class="text-presets">
+              <button class="text-preset" data-size="64" data-weight="700"><span style="font-size:20px;font-weight:700">Title</span><small>Large Title</small></button>
+              <button class="text-preset" data-size="36" data-weight="600"><span style="font-size:15px;font-weight:600">Heading</span><small>Section Heading</small></button>
+              <button class="text-preset" data-size="24" data-weight="400"><span style="font-size:13px">Body Text</span><small>Paragraph</small></button>
+              <button class="text-preset" data-size="18" data-weight="300"><span style="font-size:11px;font-weight:300">Caption</span><small>Small Caption</small></button>
             </div>
-        </div>
-    </section>
-
-    <!-- CAMERA VIEW -->
-    <section id="view-camera" class="view">
-        <div class="video-container">
-            <video id="local-video" autoplay="" playsinline="" muted=""></video>
-            <div id="recording-indicator" class="hidden">🔴 REC <span id="rec-timer">00:00</span></div>
-        </div>
-        <div class="controls-grid">
-            <button onclick="startCamera()"><i class="fas fa-play"></i> Start</button>
-            <button onclick="stopCamera()"><i class="fas fa-stop"></i> Stop</button>
-            <button onclick="pauseStream()"><i class="fas fa-pause"></i> Pause</button>
-            <button onclick="resumeStream()"><i class="fas fa-forward"></i> Resume</button>
-            <button onclick="switchCamera()"><i class="fas fa-sync"></i> Switch</button>
-            <button onclick="toggleTorch()"><i class="fas fa-bolt"></i> Flash</button>
-            <button onclick="toggleMute()"><i class="fas fa-microphone-slash"></i> Mute</button>
-            <button onclick="toggleQuality()"><i class="fas fa-hd"></i> HD/SD</button>
-            <button onclick="rotateCamera()"><i class="fas fa-redo"></i> Rotate</button>
-            <button onclick="toggleRecording()"><i class="fas fa-circle" style="color:var(--danger-color)"></i> Record</button>
-            <button onclick="captureLocalSnapshot()"><i class="fas fa-camera"></i> Snap</button>
-            <button onclick="adjustZoom(0.5)"><i class="fas fa-search-plus"></i> Zoom +</button>
-            <button onclick="adjustZoom(-0.5)"><i class="fas fa-search-minus"></i> Zoom -</button>
-            <button onclick="toggleFullscreen('local-video')"><i class="fas fa-expand"></i> Full</button>
-        </div>
-    </section>
-
-    <!-- NETWORK VIEW -->
-    <section id="view-network" class="view">
-        <div class="network-card">
-            <h2>Camera Server</h2>
-            <div class="status-badge offline" id="server-status">Stopped</div>
-            <br />
-            <button id="btn-start-server" class="primary" onclick="startServer()" style="width:100%; margin-top:10px;">Start Camera Server</button>
-            
-            <div id="server-info" class="hidden">
-                <div class="info-row"><span>Local IP Address:</span> <strong id="display-mock-ip">192.168.1.x</strong></div>
-                <div class="info-row"><span>Port:</span> <strong>8080</strong></div>
-                <div class="info-row"><span>Camera ID:</span> <strong id="display-peer-id" style="font-size:12px; word-break:break-all;">Generating...</strong></div>
-                <div class="info-row"><span>Status:</span> <strong class="online">Online</strong></div>
-                
-                <div id="qrcode" class="qr-container"></div>
-                <p class="hint">Scan QR code with another device on the same WiFi to view the live stream instantly.</p>
-                
-                <button onclick="switchView('viewer')" style="width:100%; margin-top:15px;"><i class="fas fa-eye"></i> Open Viewer Mode</button>
+            <div class="panel-section-title">Animations</div>
+            <div class="anim-grid">
+              <button class="anim-chip" data-anim="fade-in">Fade In</button>
+              <button class="anim-chip" data-anim="slide-in-left">Slide Left</button>
+              <button class="anim-chip" data-anim="slide-in-right">Slide Right</button>
+              <button class="anim-chip" data-anim="slide-in-top">Slide Top</button>
+              <button class="anim-chip" data-anim="zoom-in">Zoom In</button>
+              <button class="anim-chip" data-anim="bounce">Bounce</button>
+              <button class="anim-chip" data-anim="typewriter">Typewriter</button>
+              <button class="anim-chip" data-anim="pop">Pop</button>
+              <button class="anim-chip" data-anim="rotate-in">Rotate In</button>
+              <button class="anim-chip" data-anim="fade-out">Fade Out</button>
+              <button class="anim-chip" data-anim="slide-out">Slide Out</button>
+              <button class="anim-chip" data-anim="zoom-out">Zoom Out</button>
+              <button class="anim-chip loop-anim" data-anim="floating">Floating</button>
+              <button class="anim-chip loop-anim" data-anim="pulse">Pulse</button>
+              <button class="anim-chip loop-anim" data-anim="shake">Shake</button>
+              <button class="anim-chip loop-anim" data-anim="blink">Blink</button>
             </div>
-        </div>
-    </section>
-
-    <!-- RECORDINGS VIEW -->
-    <section id="view-recordings" class="view">
-        <h2>File Manager</h2>
-        <div id="recordings-list" class="recordings-list">
-            <p style="opacity:0.6; text-align:center;">No recordings yet.</p>
-        </div>
-    </section>
-
-    <!-- SETTINGS VIEW -->
-    <section id="view-settings" class="view">
-        <h2>Settings</h2>
-        
-        <div style="background: var(--surface-color); padding: 15px; border-radius: var(--border-radius); margin-bottom: 20px;">
-            <h3 style="margin-top:0; font-size:15px; border-bottom:1px solid rgba(128,128,128,0.2); padding-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-                <span><i class="fas fa-network-wired"></i> IP Camera Network Info</span>
-                <button onclick="detectWiFiIP()" title="Refresh WiFi IP" style="background:none; border:none; padding:4px 8px; cursor:pointer; color:var(--primary-color); font-size:14px;"><i class="fas fa-sync-alt"></i> Refresh IP</button>
-            </h3>
-            <div class="info-row"><span>WiFi IP Address:</span> <strong class="display-mock-ip-elem">Detecting...</strong></div>
-            <div class="info-row"><span>Stream Link:</span> <strong class="display-stream-url-elem" style="font-size:12px; word-break:break-all; color:var(--primary-color);">http://192.168.1.x:8080</strong></div>
-            <div class="info-row"><span>Camera ID:</span> <strong class="display-peer-id-elem" style="font-size:12px; word-break:break-all;">Stopped</strong></div>
-            
-            <div style="margin-top: 15px; text-align: center;">
-                <div style="font-size:12px; opacity:0.85; margin-bottom:8px; font-weight:600;"><i class="fas fa-qrcode"></i> Streaming Link QR Code:</div>
-                <div class="qr-container qrcode-elem" style="display:flex; justify-content:center; margin:0 auto; padding:10px; background:#ffffff; border-radius:8px; width:fit-content;"></div>
-                <p class="hint" style="font-size:11px; opacity:0.7; margin-top:6px;">Scan with any phone or web browser on the same WiFi network to view stream</p>
+          </div>
+          <div class="lpanel" id="panel-effects">
+            <div class="panel-header"><span>Visual Effects</span></div>
+            <div class="effects-categories">
+              <button class="cat-chip active" data-cat="all">All</button>
+              <button class="cat-chip" data-cat="cinematic">Cinematic</button>
+              <button class="cat-chip" data-cat="glitch">Glitch</button>
+              <button class="cat-chip" data-cat="retro">Retro</button>
+              <button class="cat-chip" data-cat="color">Color</button>
+              <button class="cat-chip" data-cat="blur">Blur</button>
+              <button class="cat-chip" data-cat="light">Light</button>
             </div>
+            <div class="effects-grid" id="effectsGrid"></div>
+          </div>
+          <div class="lpanel" id="panel-transitions">
+            <div class="panel-header"><span>Transitions</span></div>
+            <div class="transitions-grid" id="transitionsGrid"></div>
+          </div>
+          <div class="lpanel" id="panel-background">
+            <div class="panel-header"><span>Background</span></div>
+            <div class="bg-tabs">
+              <button class="bg-tab active" data-bg="solid">Solid</button>
+              <button class="bg-tab" data-bg="gradient">Gradient</button>
+              <button class="bg-tab" data-bg="image">Image</button>
+              <button class="bg-tab" data-bg="transparent">None</button>
+            </div>
+            <div id="bgSolidPanel" class="bg-panel active">
+              <label class="prop-label">Color</label>
+              <div class="color-swatch-row"><input type="color" id="bgColor" value="#1a1a2e" /><input type="text" class="hex-input" id="bgColorHex" value="#1a1a2e" /></div>
+              <div class="color-swatches">
+                <div class="cswatch" style="background:#1a1a2e" data-color="#1a1a2e"></div><div class="cswatch" style="background:#000000" data-color="#000000"></div><div class="cswatch" style="background:#ffffff" data-color="#ffffff"></div><div class="cswatch" style="background:#ff6584" data-color="#ff6584"></div><div class="cswatch" style="background:#6c63ff" data-color="#6c63ff"></div><div class="cswatch" style="background:#00b4d8" data-color="#00b4d8"></div><div class="cswatch" style="background:#06d6a0" data-color="#06d6a0"></div><div class="cswatch" style="background:#ffd60a" data-color="#ffd60a"></div><div class="cswatch" style="background:#ff9f1c" data-color="#ff9f1c"></div><div class="cswatch" style="background:#e63946" data-color="#e63946"></div>
+              </div>
+            </div>
+            <div id="bgGradientPanel" class="bg-panel">
+              <label class="prop-label">Color 1</label><div class="color-swatch-row"><input type="color" id="bgGrad1" value="#6c63ff" /></div>
+              <label class="prop-label">Color 2</label><div class="color-swatch-row"><input type="color" id="bgGrad2" value="#ff6584" /></div>
+              <label class="prop-label">Angle</label><input type="range" id="bgGradAngle" min="0" max="360" value="135" class="slider" /><span id="bgGradAngleVal" class="slider-val">135deg</span>
+            </div>
+            <div id="bgImagePanel" class="bg-panel">
+              <label class="import-btn full-width" id="bgImageLabel"><svg viewBox="0 0 16 16"><path d="M8 2v8M5 7l3 3 3-3M2 12h12" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>Upload Background<input type="file" id="bgImageInput" accept="image/*" /></label>
+              <div id="bgImagePreview" class="bg-img-preview"></div>
+            </div>
+            <div id="bgTransparentPanel" class="bg-panel"><div class="tip-box">Canvas will render with a transparent/black background.</div></div>
+            <button id="applyBgBtn" class="apply-btn">Apply Background</button>
+          </div>
+          <div class="lpanel" id="panel-fonts">
+            <div class="panel-header"><span>Fonts</span></div>
+            <label class="import-btn full-width" id="fontUploadLabel"><svg viewBox="0 0 16 16"><path d="M8 2v8M5 7l3 3 3-3M2 12h12" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>Upload Font (TTF/OTF/WOFF)<input type="file" id="fontUploadInput" accept=".ttf,.otf,.woff,.woff2" multiple /></label>
+            <div class="panel-section-title" style="margin-top:12px">Available Fonts</div>
+            <div id="fontsList" class="fonts-list"></div>
+          </div>
         </div>
+      </aside>
 
-        <div class="settings-form">
-            <label>Default Resolution
-                <select id="setting-resolution">
-                    <option value="240p">240p (Low)</option>
-                    <option value="360p">360p</option>
-                    <option value="480p">480p (SD)</option>
-                    <option value="720p" selected="">720p (HD)</option>
-                    <option value="1080p">1080p (FHD)</option>
+      <main id="centerArea">
+        <div id="previewArea">
+          <div id="canvasContainer">
+            <canvas id="mainCanvas"></canvas>
+            <div id="overlayLayer"></div>
+          </div>
+          <div id="canvasControls">
+            <button id="btnZoomOut" class="canvas-ctrl-btn">−</button>
+            <span id="canvasZoomLabel">100%</span>
+            <button id="btnZoomIn" class="canvas-ctrl-btn">+</button>
+            <button id="btnFitScreen" class="canvas-ctrl-btn">Fit</button>
+          </div>
+        </div>
+        <div id="playbackBar">
+          <div class="pb-left">
+            <button id="btnFramePrev" class="pb-btn" title="Prev Frame"><svg viewBox="0 0 20 20"><path d="M6 5v10M14 5L8 10l6 5V5z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <button id="btnPlay" class="pb-btn pb-play" title="Play/Pause (Space)"><svg id="playIcon" viewBox="0 0 20 20"><path d="M6 4l12 6-12 6V4z" fill="currentColor"/></svg><svg id="pauseIcon" viewBox="0 0 20 20" style="display:none"><rect x="5" y="4" width="4" height="12" rx="1" fill="currentColor"/><rect x="11" y="4" width="4" height="12" rx="1" fill="currentColor"/></svg></button>
+            <button id="btnFrameNext" class="pb-btn" title="Next Frame"><svg viewBox="0 0 20 20"><path d="M14 5v10M6 5l6 5-6 5V5z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <button id="btnStop" class="pb-btn" title="Stop"><svg viewBox="0 0 20 20"><rect x="4" y="4" width="12" height="12" rx="2" fill="currentColor"/></svg></button>
+          </div>
+          <div class="pb-timecode">
+            <span id="currentTime">00:00.000</span><span class="tc-sep">/</span><span id="totalDuration">00:00.000</span>
+          </div>
+          <div class="pb-right">
+            <label class="pb-speed-label">Speed</label>
+            <select id="pbSpeed" class="pb-select"><option value="0.25">0.25x</option><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x</option></select>
+            <div class="tb-divider"></div>
+            <button id="btnSplit" class="pb-btn" title="Split at Playhead (S)"><svg viewBox="0 0 20 20"><path d="M10 4v12M7 7l3-3 3 3M7 13l3 3 3-3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Split</span></button>
+            <button id="btnDelete" class="pb-btn" title="Delete Selected (Del)"><svg viewBox="0 0 20 20"><path d="M5 7h10l-1 9H6L5 7zM3 7h14M8 5h4M8 10v4M12 10v4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Delete</span></button>
+          </div>
+        </div>
+      </main>
+
+      <aside id="rightSidebar">
+        <div id="inspectorPanel">
+          <div class="inspector-header"><span id="inspectorTitle">Inspector</span></div>
+          <div id="noSelection" class="no-selection"><svg viewBox="0 0 48 48" width="40" height="40" opacity=".3"><path d="M6 6l36 36M6 42L42 6" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg><p>Select a clip or element<br/>to see its properties</p></div>
+          <div id="videoInspector" class="inspector-content" style="display:none">
+            <div class="insp-tabs"><button class="insp-tab active" data-tab="transform">Transform</button><button class="insp-tab" data-tab="color">Color</button><button class="insp-tab" data-tab="effects">Effects</button></div>
+            <div class="insp-tab-content active" id="vtab-transform">
+              <div class="prop-row"><label>X</label><input type="number" id="vPosX" value="0" class="num-input" /><label>Y</label><input type="number" id="vPosY" value="0" class="num-input" /></div>
+              <div class="prop-row"><label>Scale</label><input type="range" id="vScale" min="10" max="300" value="100" class="slider" /><span id="vScaleVal" class="slider-val">100%</span></div>
+              <div class="prop-row"><label>Rotation</label><input type="range" id="vRotation" min="-180" max="180" value="0" class="slider" /><span id="vRotVal" class="slider-val">0deg</span></div>
+              <div class="prop-row"><label>Opacity</label><input type="range" id="vOpacity" min="0" max="100" value="100" class="slider" /><span id="vOpacityVal" class="slider-val">100%</span></div>
+              <div class="prop-row"><label>Speed</label><input type="range" id="vSpeed" min="25" max="400" value="100" class="slider" /><span id="vSpeedVal" class="slider-val">1x</span></div>
+              <div class="prop-row"><label>Volume</label><input type="range" id="vVolume" min="0" max="200" value="100" class="slider" /><span id="vVolumeVal" class="slider-val">100%</span></div>
+              <div class="prop-row"><label>Flip</label><div class="flip-btns"><button class="flip-btn" id="vFlipH">Horiz</button><button class="flip-btn" id="vFlipV">Vert</button></div></div>
+              <div class="prop-row"><label>Fade In</label><input type="range" id="vFadeIn" min="0" max="3000" value="0" class="slider" /><span id="vFadeInVal" class="slider-val">0s</span></div>
+              <div class="prop-row"><label>Fade Out</label><input type="range" id="vFadeOut" min="0" max="3000" value="0" class="slider" /><span id="vFadeOutVal" class="slider-val">0s</span></div>
+            </div>
+            <div class="insp-tab-content" id="vtab-color">
+              <div class="prop-row"><label>Brightness</label><input type="range" id="vBrightness" min="-100" max="100" value="0" class="slider" /><span id="vBrightnessVal" class="slider-val">0</span></div>
+              <div class="prop-row"><label>Contrast</label><input type="range" id="vContrast" min="-100" max="100" value="0" class="slider" /><span id="vContrastVal" class="slider-val">0</span></div>
+              <div class="prop-row"><label>Saturation</label><input type="range" id="vSaturation" min="-100" max="100" value="0" class="slider" /><span id="vSaturationVal" class="slider-val">0</span></div>
+              <div class="prop-row"><label>Hue</label><input type="range" id="vHue" min="-180" max="180" value="0" class="slider hue-slider" /><span id="vHueVal" class="slider-val">0deg</span></div>
+              <div class="prop-row"><label>Blur</label><input type="range" id="vBlur" min="0" max="20" value="0" class="slider" /><span id="vBlurVal" class="slider-val">0px</span></div>
+            </div>
+            <div class="insp-tab-content" id="vtab-effects"><div class="effect-chips-wrap" id="vEffectChips"></div></div>
+          </div>
+          <div id="textInspector" class="inspector-content" style="display:none">
+            <div class="insp-tabs"><button class="insp-tab active" data-tab="ttext">Text</button><button class="insp-tab" data-tab="ttransform">Transform</button><button class="insp-tab" data-tab="tanim">Animation</button></div>
+            <div class="insp-tab-content active" id="ttab-ttext">
+              <div class="prop-row full"><label>Content</label><textarea id="tContent" rows="3" class="text-area-inp"></textarea></div>
+              <div class="prop-row"><label>Font</label><select id="tFont" class="select-inp"></select></div>
+              <div class="prop-row"><label>Size</label><input type="number" id="tSize" value="48" class="num-input" min="8" max="400" /><span class="unit">px</span></div>
+              <div class="prop-row"><label>Style</label><div class="style-btns"><button class="style-btn" id="tBold"><b>B</b></button><button class="style-btn" id="tItalic"><i>I</i></button><button class="style-btn" id="tUnderline"><u>U</u></button></div></div>
+              <div class="prop-row"><label>Align</label><div class="align-btns"><button class="align-btn" id="tAlignLeft">Left</button><button class="align-btn active" id="tAlignCenter">Center</button><button class="align-btn" id="tAlignRight">Right</button></div></div>
+              <div class="prop-row"><label>Color</label><input type="color" id="tColor" value="#ffffff" class="color-inp" /></div>
+              <div class="prop-row"><label>Opacity</label><input type="range" id="tOpacity" min="0" max="100" value="100" class="slider" /><span id="tOpacityVal" class="slider-val">100%</span></div>
+              <div class="prop-row"><label>Letter Sp.</label><input type="range" id="tLetterSpacing" min="-5" max="30" value="0" class="slider" /><span id="tLSVal" class="slider-val">0px</span></div>
+              <div class="prop-row"><label>Line H.</label><input type="range" id="tLineHeight" min="50" max="300" value="120" class="slider" /><span id="tLHVal" class="slider-val">1.2</span></div>
+              <div class="prop-row"><label>Max Width</label><input type="number" id="tMaxWidth" value="600" class="num-input" min="100" max="4000" /><span class="unit">px</span></div>
+              <div class="panel-section-title">Shadow</div>
+              <div class="prop-row"><label>Color</label><input type="color" id="tShadowColor" value="#000000" class="color-inp" /></div>
+              <div class="prop-row"><label>Opacity</label><input type="range" id="tShadowOpacity" min="0" max="100" value="60" class="slider" /><span id="tSOVal" class="slider-val">60%</span></div>
+              <div class="prop-row"><label>Blur</label><input type="range" id="tShadowBlur" min="0" max="30" value="4" class="slider" /><span id="tSBVal" class="slider-val">4px</span></div>
+              <div class="prop-row"><label>X</label><input type="number" id="tShadowX" value="2" class="num-input" /><label>Y</label><input type="number" id="tShadowY" value="2" class="num-input" /></div>
+              <div class="panel-section-title">Background</div>
+              <div class="prop-row"><label>Enabled</label><input type="checkbox" id="tBgEnabled" class="checkbox-inp" /></div>
+              <div class="prop-row"><label>Color</label><input type="color" id="tBgColor" value="#000000" class="color-inp" /></div>
+              <div class="prop-row"><label>Opacity</label><input type="range" id="tBgOpacity" min="0" max="100" value="60" class="slider" /><span id="tBgOpVal" class="slider-val">60%</span></div>
+              <div class="prop-row"><label>Padding</label><input type="range" id="tBgPadding" min="0" max="50" value="10" class="slider" /><span id="tBgPadVal" class="slider-val">10px</span></div>
+              <div class="panel-section-title">Stroke</div>
+              <div class="prop-row"><label>Color</label><input type="color" id="tStrokeColor" value="#000000" class="color-inp" /></div>
+              <div class="prop-row"><label>Width</label><input type="range" id="tStrokeWidth" min="0" max="20" value="0" class="slider" /><span id="tSWVal" class="slider-val">0px</span></div>
+            </div>
+            <div class="insp-tab-content" id="ttab-ttransform">
+              <div class="prop-row"><label>X</label><input type="number" id="tPosX" value="0" class="num-input" /><label>Y</label><input type="number" id="tPosY" value="0" class="num-input" /></div>
+              <div class="prop-row"><label>Rotation</label><input type="range" id="tRotation" min="-180" max="180" value="0" class="slider" /><span id="tRotVal" class="slider-val">0deg</span></div>
+              <div class="prop-row"><label>Scale</label><input type="range" id="tScale" min="10" max="500" value="100" class="slider" /><span id="tScaleVal" class="slider-val">100%</span></div>
+            </div>
+            <div class="insp-tab-content" id="ttab-tanim">
+              <div class="prop-row full"><label>Animation</label>
+                <select id="tAnimType" class="select-inp">
+                  <option value="none">None</option>
+                  <option value="fade-in">Fade In</option>
+                  <option value="slide-in-left">Slide In Left</option>
+                  <option value="slide-in-right">Slide In Right</option>
+                  <option value="slide-in-top">Slide In Top</option>
+                  <option value="zoom-in">Zoom In</option>
+                  <option value="bounce">Bounce</option>
+                  <option value="typewriter">Typewriter</option>
+                  <option value="pop">Pop</option>
+                  <option value="rotate-in">Rotate In</option>
+                  <option value="fade-out">Fade Out</option>
+                  <option value="slide-out">Slide Out</option>
+                  <option value="zoom-out">Zoom Out</option>
+                  <option value="floating">Floating (Loop)</option>
+                  <option value="pulse">Pulse (Loop)</option>
+                  <option value="shake">Shake (Loop)</option>
+                  <option value="blink">Blink (Loop)</option>
                 </select>
-            </label>
-            <label>Default Camera
-                <select id="setting-camera">
-                    <option value="environment">Rear Camera</option>
-                    <option value="user">Front Camera</option>
-                </select>
-            </label>
-            <label>Password Protection (Optional)
-                <input type="password" id="setting-password" placeholder="Leave blank for no password" />
-            </label>
-            <label class="checkbox-label">
-                <input type="checkbox" id="setting-audio" checked="" /> Audio Enabled
-            </label>
-            <label class="checkbox-label">
-                <input type="checkbox" id="setting-wake-lock" checked="" /> Keep Screen On (Wake Lock)
-            </label>
-            <button class="primary" onclick="saveSettings()" style="width:100%; margin-top:10px;">Save Settings</button>
+              </div>
+              <div class="prop-row"><label>Duration</label><input type="range" id="tAnimDuration" min="2" max="50" step="1" value="10" class="slider" /><span id="tADVal" class="slider-val">1s</span></div>
+            </div>
+          </div>
+          <div id="imageInspector" class="inspector-content" style="display:none">
+            <div class="insp-tabs"><button class="insp-tab active" data-tab="itransform">Transform</button><button class="insp-tab" data-tab="icolor">Color</button></div>
+            <div class="insp-tab-content active" id="itab-itransform">
+              <div class="prop-row"><label>X</label><input type="number" id="iPosX" value="0" class="num-input" /><label>Y</label><input type="number" id="iPosY" value="0" class="num-input" /></div>
+              <div class="prop-row"><label>Width</label><input type="number" id="iWidth" class="num-input" /><label>Height</label><input type="number" id="iHeight" class="num-input" /></div>
+              <div class="prop-row"><label>Scale</label><input type="range" id="iScale" min="10" max="500" value="100" class="slider" /><span id="iScaleVal" class="slider-val">100%</span></div>
+              <div class="prop-row"><label>Rotation</label><input type="range" id="iRotation" min="-180" max="180" value="0" class="slider" /><span id="iRotVal" class="slider-val">0deg</span></div>
+              <div class="prop-row"><label>Opacity</label><input type="range" id="iOpacity" min="0" max="100" value="100" class="slider" /><span id="iOpacityVal" class="slider-val">100%</span></div>
+              <div class="prop-row"><label>Flip</label><div class="flip-btns"><button class="flip-btn" id="iFlipH">Horiz</button><button class="flip-btn" id="iFlipV">Vert</button></div></div>
+            </div>
+            <div class="insp-tab-content" id="itab-icolor">
+              <div class="prop-row"><label>Brightness</label><input type="range" id="iBrightness" min="-100" max="100" value="0" class="slider" /><span id="iBrightnessVal" class="slider-val">0</span></div>
+              <div class="prop-row"><label>Contrast</label><input type="range" id="iContrast" min="-100" max="100" value="0" class="slider" /><span id="iContrastVal" class="slider-val">0</span></div>
+              <div class="prop-row"><label>Saturation</label><input type="range" id="iSaturation" min="-100" max="100" value="0" class="slider" /><span id="iSaturationVal" class="slider-val">0</span></div>
+              <div class="prop-row"><label>Hue</label><input type="range" id="iHue" min="-180" max="180" value="0" class="slider hue-slider" /><span id="iHueVal" class="slider-val">0deg</span></div>
+              <div class="prop-row"><label>Blur</label><input type="range" id="iBlur" min="0" max="20" value="0" class="slider" /><span id="iBlurVal" class="slider-val">0px</span></div>
+            </div>
+          </div>
+          <div id="audioInspector" class="inspector-content" style="display:none">
+            <div class="panel-section-title">Audio Properties</div>
+            <div class="prop-row"><label>Volume</label><input type="range" id="aVolume" min="0" max="200" value="100" class="slider" /><span id="aVolumeVal" class="slider-val">100%</span></div>
+            <div class="prop-row"><label>Fade In</label><input type="range" id="aFadeIn" min="0" max="5000" value="0" class="slider" /><span id="aFadeInVal" class="slider-val">0s</span></div>
+            <div class="prop-row"><label>Fade Out</label><input type="range" id="aFadeOut" min="0" max="5000" value="0" class="slider" /><span id="aFadeOutVal" class="slider-val">0s</span></div>
+          </div>
         </div>
-    </section>
+      </aside>
+    </div>
 
-    <!-- VIEWER VIEW -->
-    <section id="view-viewer" class="view">
-        <div id="viewer-connect-panel">
-            <h2>Remote Viewer</h2>
-            <p style="font-size:13px; opacity:0.7;">View live IP camera streaming in any web browser without needing a camera on this device. Enter the Camera ID or IP Address shown on the host device.</p>
-            <input type="text" id="viewer-peer-id" placeholder="Camera ID / IP Address (e.g. abc-123-xyz)" />
-            <input type="password" id="viewer-password" placeholder="Password (if required)" />
-            <button class="primary" onclick="connectToCamera()" style="width:100%; margin-bottom:10px;">Connect to Camera</button>
-            <button onclick="startQRScanner()" id="btn-scan-qr" style="width:100%;"><i class="fas fa-qrcode"></i> Scan QR Code</button>
-            <div id="qr-scanner-container" style="display:none; margin-top:15px; background:white; border-radius:8px; overflow:hidden;">
-                <div id="qr-reader" style="width:100%;"></div>
-                <button onclick="switchQRCamera()" style="width:100%; border-radius:0;"><i class="fas fa-sync"></i> Switch Camera</button>
-            </div>
+    <div id="timelineArea">
+      <div id="timelineToolbar">
+        <span class="tl-label">Timeline</span>
+        <div class="tl-tools">
+          <button class="tl-tool-btn" id="btnAddVideoTrack">+ Video</button>
+          <button class="tl-tool-btn" id="btnAddAudioTrack">+ Audio</button>
+          <div class="tb-divider"></div>
+          <button class="tl-tool-btn" id="btnSnap">Snap</button>
         </div>
-        
-        <div id="viewer-video-panel" class="hidden">
-            <div class="viewer-stats">
-                <span><i class="fas fa-signal"></i> FPS: <strong id="viewer-fps">0</strong></span>
-                <span><i class="fas fa-desktop"></i> Res: <strong id="viewer-res">-</strong></span>
-            </div>
-            <div class="video-container">
-                <video id="remote-video" autoplay="" playsinline=""></video>
-            </div>
-            <div class="controls-grid">
-                <button onclick="captureSnapshot()"><i class="fas fa-camera"></i> Snap</button>
-                <button onclick="sendRemoteCommand('start_recording')"><i class="fas fa-circle" style="color:var(--danger-color)"></i> Rec Start</button>
-                <button onclick="sendRemoteCommand('stop_recording')"><i class="fas fa-square"></i> Rec Stop</button>
-                <button onclick="sendRemoteCommand('switch_camera')"><i class="fas fa-sync"></i> Switch Cam</button>
-                <button onclick="sendRemoteCommand('toggle_flash')"><i class="fas fa-bolt"></i> Flash</button>
-                <button onclick="toggleFullscreen('remote-video')"><i class="fas fa-expand"></i> Full</button>
-            </div>
-            <button onclick="disconnectViewer()" style="width:100%; background:var(--danger-color); color:white; border:none; margin-top:10px;">Disconnect</button>
+        <div class="tl-zoom">
+          <input type="range" id="tlZoom" min="20" max="400" value="80" class="tl-zoom-slider" />
+          <span id="tlZoomLabel">80%</span>
         </div>
-    </section>
-</main>
+      </div>
+      <div id="timelineScroll">
+        <div id="timelineRulerWrap">
+          <div id="trackLabels"></div>
+          <div id="rulerAndTracks">
+            <canvas id="timelineRuler"></canvas>
+            <div id="tracksContainer"></div>
+            <div id="playheadLine"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-<nav class="bottom-nav">
-    <button onclick="switchView('home')" class="nav-btn active"><i class="fas fa-home"></i>Home</button>
-    <button onclick="switchView('camera')" class="nav-btn"><i class="fas fa-camera"></i>Camera</button>
-    <button onclick="switchView('network')" class="nav-btn"><i class="fas fa-wifi"></i>Network</button>
-    <button onclick="switchView('recordings')" class="nav-btn"><i class="fas fa-folder"></i>Files</button>
-    <button onclick="switchView('settings')" class="nav-btn"><i class="fas fa-cog"></i>Settings</button>
-</nav>
+  <!-- MODALS -->
+  <div id="ratioModal" class="modal-overlay" style="display:none">
+    <div class="modal">
+      <div class="modal-header"><span>Canvas Ratio</span><button class="modal-close" data-modal="ratioModal">X</button></div>
+      <div class="ratio-grid">
+        <button class="ratio-opt" data-ratio="16:9" data-w="1920" data-h="1080" data-label="16:9"><div class="ratio-icon" style="width:48px;height:27px;"></div><span>16:9 Landscape</span></button>
+        <button class="ratio-opt" data-ratio="9:16" data-w="1080" data-h="1920" data-label="9:16"><div class="ratio-icon" style="width:27px;height:48px;"></div><span>9:16 Portrait</span></button>
+        <button class="ratio-opt" data-ratio="1:1" data-w="1080" data-h="1080" data-label="1:1"><div class="ratio-icon" style="width:38px;height:38px;"></div><span>1:1 Square</span></button>
+        <button class="ratio-opt" data-ratio="4:5" data-w="1080" data-h="1350" data-label="4:5"><div class="ratio-icon" style="width:32px;height:40px;"></div><span>4:5</span></button>
+        <button class="ratio-opt" data-ratio="4:3" data-w="1440" data-h="1080" data-label="4:3"><div class="ratio-icon" style="width:44px;height:33px;"></div><span>4:3</span></button>
+        <button class="ratio-opt" data-ratio="3:4" data-w="1080" data-h="1440" data-label="3:4"><div class="ratio-icon" style="width:33px;height:44px;"></div><span>3:4</span></button>
+        <button class="ratio-opt" data-ratio="2K" data-w="2560" data-h="1440" data-label="2K"><div class="ratio-icon" style="width:52px;height:29px;"></div><span>2K 16:9</span></button>
+        <button class="ratio-opt" data-ratio="4K" data-w="3840" data-h="2160" data-label="4K"><div class="ratio-icon" style="width:52px;height:29px;"></div><span>4K UHD</span></button>
+      </div>
+      <div class="modal-section-title">Custom</div>
+      <div class="custom-ratio-row">
+        <input type="number" id="customW" placeholder="Width" value="1920" class="num-input" />
+        <span>x</span>
+        <input type="number" id="customH" placeholder="Height" value="1080" class="num-input" />
+        <button id="applyCustomRatio" class="apply-btn">Apply</button>
+      </div>
+    </div>
+  </div>
 
+  <div id="exportModal" class="modal-overlay" style="display:none">
+    <div class="modal export-modal">
+      <div class="modal-header"><span>Export Video</span><button class="modal-close" data-modal="exportModal">X</button></div>
+      <div id="exportSettings">
+        <div class="export-row">
+          <div class="export-col"><label class="prop-label">Format</label><select id="expFormat" class="select-inp"><option value="mp4">MP4 / MPEG-4</option><option value="webm">WebM</option></select></div>
+          <div class="export-col"><label class="prop-label">Resolution</label><select id="expRes" class="select-inp"><option value="480">480p SD</option><option value="720">720p HD</option><option value="1080" selected>1080p Full HD</option><option value="1440">1440p 2K</option><option value="2160">2160p 4K</option></select></div>
+        </div>
+        <div class="export-row">
+          <div class="export-col"><label class="prop-label">Frame Rate</label><select id="expFPS" class="select-inp"><option value="24">24 FPS</option><option value="25">25 FPS</option><option value="30" selected>30 FPS</option><option value="50">50 FPS</option><option value="60">60 FPS</option></select></div>
+          <div class="export-col"><label class="prop-label">Quality</label><select id="expQuality" class="select-inp"><option value="low">Low</option><option value="medium">Medium</option><option value="high" selected>High</option></select></div>
+        </div>
+        <button id="startExportBtn" class="apply-btn export-start-btn">Start Export</button>
+      </div>
+      <div id="exportProgress" style="display:none">
+        <div class="exp-progress-header"><div class="exp-spinner"></div><span id="expStatus">Initializing renderer...</span></div>
+        <div class="exp-progress-bar-wrap"><div id="expProgressBar" class="exp-progress-bar" style="width:0%"></div></div>
+        <span id="expPercent">0%</span>
+      </div>
+      <div id="exportDone" style="display:none">
+        <div class="exp-done-icon">Check</div>
+        <p>Export complete!</p>
+        <a id="downloadLink" class="apply-btn" download="cutflow-export.webm">Download Video</a>
+        <button id="expNewExport" class="tb-btn" style="margin-top:8px">Export Again</button>
+      </div>
+      <div id="exportError" style="display:none">
+        <div class="exp-error-icon">!</div>
+        <p id="expErrorMsg">Export failed. Please try again.</p>
+        <button id="expRetry" class="apply-btn">Retry</button>
+      </div>
+    </div>
+  </div>
 
+  <div id="newProjectModal" class="modal-overlay" style="display:none">
+    <div class="modal">
+      <div class="modal-header"><span>New Project</span><button class="modal-close" data-modal="newProjectModal">X</button></div>
+      <p style="color:var(--text-secondary);margin-bottom:16px">This will clear your current project. Are you sure?</p>
+      <div style="display:flex;gap:8px">
+        <button id="confirmNewProject" class="apply-btn" style="background:var(--danger)">Clear and Start New</button>
+        <button class="modal-close tb-btn" data-modal="newProjectModal">Cancel</button>
+      </div>
+    </div>
+  </div>
 
-<script src="script.js"></script></body></html>
+  <div id="fullscreenPreview" style="display:none">
+    <canvas id="fsCanvas"></canvas>
+    <button id="fsClose">X Close</button>
+  </div>
+
+  <div id="toast"></div>
+  <div id="contextMenu" class="context-menu" style="display:none">
+    <button class="ctx-item" id="ctx-split">Split at Playhead</button>
+    <button class="ctx-item" id="ctx-duplicate">Duplicate</button>
+    <button class="ctx-item" id="ctx-delete">Delete</button>
+    <button class="ctx-item" id="ctx-mute">Mute/Unmute</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
